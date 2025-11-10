@@ -64,7 +64,7 @@ def _new_hub(hub_name, sensors):
     if not validate_table_name(hub_name) or not validate_sensor_list(sensors): 
         return
 
-    print("Create new hub: ", hub_name, " with sensors: ", sensors)
+    print("Create new hub: ", hub_name, " with sensors: ", sensors | date_dict)
 
     sensor_property_list = dict_to_property_list(sensors | date_dict)
     
@@ -75,22 +75,24 @@ def _new_hub(hub_name, sensors):
         print(f"Hub {hub_name} already exists")
 
 def _fetch_sensor_data(hub_name, sensor_name):
-    print(f"Fetch {sensor_name} from {hub_name}")
+    #print(f"Fetch {sensor_name} from {hub_name}")
     cursor.execute(f"SELECT {sensor_name} FROM {hub_name}")
 
     rows = cursor.fetchall()
     return [row[0] for row in rows]
 
 
-def _push_sensor_data(hub_name, sensor_data):
-    columns = array_to_property_list(sensor_data.keys())
-    values = array_to_property_list(list(map(str, sensor_data.values())))
+def _push_sensor_data(hub_name, sensor_data, timestamp):
+    inputs = sensor_data | timestamp
+
+    columns = array_to_property_list(inputs.keys())
+    values = array_to_property_list(list(map(str, inputs.values())))
 
     for column in columns:
         pass
 
     try:
-        print(f"Push data: {columns} into {hub_name}")
+        #print(f"Push data: {columns} into {hub_name}")
         cursor.execute(f"INSERT INTO {hub_name} {columns} VALUES {values}")
     except:
         print(f"Failed to push to hub '{hub_name}', invalid data: {sensor_data}")
