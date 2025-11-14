@@ -5,7 +5,7 @@ import regex as re
 conn = sqlite3.connect('cornhub.db')  # Creates a new database file if it doesn’t exist
 cursor = conn.cursor()
 
-date_dict = {"Year":"INTEGER", "Month":"INTEGER", "Day":"INTEGER", "Hour":"INTEGER", "Minute":"INTEGER", "Second":"INTEGER"}
+date_dict = {"Timestamp":"INTEGER"}
 
 def _open_db():
     conn = sqlite3.connect('cornhub.db')
@@ -60,7 +60,7 @@ def array_to_string(arr):
 ## Creates a new table set up to handle inputs from an array of sensors
 ## hub_name: String, Name of the hub to be created
 ## sensors: Array[String], List of sensors
-def _new_hub(hub_name, sensors):
+def _create_hub(hub_name, sensors):
     if not validate_table_name(hub_name) or not validate_sensor_list(sensors): 
         return
 

@@ -10,7 +10,7 @@ import io
 import adafruit_ssd1306
 import adafruit_rfm9x
 import spidev
-import datetime
+import time
 
 import database as db
 
@@ -25,7 +25,7 @@ import database as db
 #BLOB
 
 
-date_dict = {"Year":"INTEGER", "Month":"INTEGER", "Day":"INTEGER", "Hour":"INTEGER", "Minute":"INTEGER", "Second":"INTEGER"}
+date_dict = {"Timestamp":"INTEGER"}
 
 spi = busio.SPI(board.SCK, MOSI=board.MOSI, MISO=board.MISO)
 cs = digitalio.DigitalInOut(board.CE1)
@@ -38,7 +38,7 @@ display = adafruit_ssd1306.SSD1306_I2C(128, 32, i2c)
 def test_db():
     #_write("2025-10-11T23:24:00Z")
 
-    db._new_hub("Greenhouse", {"Temp":"REAL", "Humidity":"REAL", "Sunlight":"TEXT"})
+    db._create_hub("Greenhouse", {"Temp":"REAL", "Humidity":"REAL", "Sunlight":"TEXT"})
     
     #"2025-10-11T23:24:00Z"
     db._push_sensor_data("Greenhouse", {"Temp" : 1.0, "Humidity" : 5.0, "Day" : 1})
@@ -89,11 +89,9 @@ def display_data():
     humidity = get_last_n(db._fetch_sensor_data("Greenhouse", "Humidity"), num_items)
     lux = get_last_n(db._fetch_sensor_data("Greenhouse", "Lux"), num_items)
     distance = get_last_n(db._fetch_sensor_data("Greenhouse", "Distance"), num_items)
-    hour = get_last_n(db._fetch_sensor_data("Greenhouse", "Hour"), num_items)
-    minute = get_last_n(db._fetch_sensor_data("Greenhouse", "Minute"), num_items)
-    second = get_last_n(db._fetch_sensor_data("Greenhouse", "Second"), num_items)
+    timestamp = get_last_n(db._fetch_sensor_data("Greenhouse", "Timestamp"), num_items)
     
-    print(f"{hour}:{minute}:{second} Temp: {temperature} Humidity: {humidity} Lux:{lux} Distance: {distance}")
+    print(f"{timestamp} Temp: {temperature} Humidity: {humidity} Lux:{lux} Distance: {distance}")
     
     last_5 = get_last_n(db._fetch_sensor_data("Greenhouse", "Distance"), 5)
 
@@ -113,8 +111,34 @@ def display_data():
     display.show()
 
 
-def parse_timestamp(timestamp):
-    return {"Year" : timestamp.year, "Month" : timestamp.month, "Day" : timestamp.day, "Hour" : timestamp.hour, "Minute" : timestamp.minute, "Second" : timestamp.second}
+def get_timestamp():
+    return {"Timestamp" : int(time.time())}
+
+
+def parse_create_hub_packet(data_str):
+    
+    data = {}
+    properties = data_str.split(",")
+
+    for prop in properties:
+        prop_parts = prop.split(":")
+        sensor_name = prop_parts[0]
+
+        sensor_data_type = ""
+
+        match prop_parts[1]:
+            case "0":
+                sensor_data_type = "BOOL"
+            case "1":
+                sensor_data_type = "INTEGER"
+            case "2":
+                sensor_data_type = "REAL"
+            case "3":
+                sensor_data_type = "TEXT"
+
+        data[sensor_name] = sensor_data_type
+        
+    return data
 
 def parse_push_data_packet(data_str):
     
@@ -131,21 +155,22 @@ def parse_push_data_packet(data_str):
     return data
 
 
-def parse_packet(packet, timestamp):
-    packet_str = str(packet)[12:-3]
+def parse_packet(packet):
+    packet_str = str(packet)[12:-2]
     #print("Parse: ", packet_str)
     packet_parts = packet_str.split(">")
     
-
     hub_name = packet_parts[0]
     command = packet_parts[1]
     properties = packet_parts[2]
-
-
+    
     match command:
+        case "CH":
+            data = parse_create_hub_packet(properties)
+            db._create_hub(hub_name, data)
         case "PD": #format: Hub_Name>PD>SensorName:SensorData,SensorName:SensorData
             data = parse_push_data_packet(properties)
-            db._push_sensor_data(hub_name, data, timestamp)
+            db._push_sensor_data(hub_name, data, get_timestamp())
 
 
 def start_lora_receiver():
@@ -153,16 +178,16 @@ def start_lora_receiver():
     counter = 0
     while True:
         packet = lora.receive()
-        timestamp = parse_timestamp(datetime.datetime.utcnow())
 
         if packet is None:
             #print(counter, ": No packet")
             pass
         else:
-            try:
-                parse_packet(packet, timestamp)
-            except:
-                print("Failed to parse data: ", packet)
+            #try:
+            print("Packet: ", packet)
+            parse_packet(packet)
+            #except:
+            #    print("Failed to parse data: ", packet)
 
             try:
                 display_data()
@@ -172,7 +197,7 @@ def start_lora_receiver():
         counter += 1
 
 def main():
-    db._new_hub("Greenhouse", {"Temperature":"INTEGER", "Humidity":"REAL", "Lux":"INTEGER", "Distance":"REAL"})
+    db._create_hub("Greenhouse", {"Temperature":"INTEGER", "Humidity":"REAL", "Lux":"INTEGER", "Distance":"REAL"})
 
     start_lora_receiver()
 
