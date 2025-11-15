@@ -85,6 +85,10 @@ def on_create_hub(hub_name, data):
 
 def on_push_data(hub_name, data, timestamp):
     print(f"{timestamp}: Push_data: {hub_name} {data}")
+    
+    current_time = receiver.get_timestamp()["Timestamp"]
+    print(db._fetch_sensor_data("Greenhouse", "Lux", current_time - 10, current_time))
+
 
 def main():
     receiver.start_lora_receiver("database", on_create_hub, on_push_data)

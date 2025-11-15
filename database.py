@@ -76,9 +76,9 @@ def _create_hub(hub_name, sensors):
     else:
         print(f"Hub {hub_name} already exists")
 
-def _fetch_sensor_data(hub_name, sensor_name):
+def _fetch_sensor_data(hub_name, sensor_name, timestamp_start, timestamp_end):
     #print(f"Fetch {sensor_name} from {hub_name}")
-    cursor.execute(f"SELECT {sensor_name} FROM {hub_name}")
+    cursor.execute(f"SELECT {sensor_name} FROM {hub_name} WHERE Timestamp BETWEEN {timestamp_start} AND {timestamp_end}")
 
     rows = cursor.fetchall()
     return [row[0] for row in rows]
