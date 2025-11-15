@@ -2,13 +2,15 @@ import sqlite3
 import pandas as pd
 import regex as re
 
-conn = sqlite3.connect('cornhub.db')  # Creates a new database file if it doesn’t exist
-cursor = conn.cursor()
+conn = None  # Creates a new database file if it doesn’t exist
+cursor = None
 
 date_dict = {"Timestamp":"INTEGER"}
 
-def _open_db():
-    conn = sqlite3.connect('cornhub.db')
+def _open_db(db_name):
+    global conn
+    conn = sqlite3.connect(f"{db_name}.db")
+    global cursor
     cursor = conn.cursor()
 
 def _commit_db():
