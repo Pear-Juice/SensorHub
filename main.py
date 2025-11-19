@@ -4,6 +4,7 @@ import numpy as np
 
 import database as db
 import receiver
+import app
 
 def test_db():
     #_write("2025-10-11T23:24:00Z")
@@ -85,10 +86,6 @@ def on_create_hub(hub_name, data):
 
 def on_push_data(hub_name, data, timestamp):
     print(f"{timestamp}: Push_data: {hub_name} {data}")
-    
-    current_time = receiver.get_timestamp()["Timestamp"]
-    print(db._fetch_sensor_data("Greenhouse", "Lux", current_time - 10, current_time))
-
 
 def main():
     receiver.start_lora_receiver("database", on_create_hub, on_push_data)

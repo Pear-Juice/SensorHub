@@ -76,6 +76,19 @@ def _create_hub(hub_name, sensors):
     else:
         print(f"Hub {hub_name} already exists")
 
+def _get_hubs():
+    cursor.execute("SELECT name FROM sqlite_schema WHERE type = 'table'")
+    rows = cursor.fetchall()
+    return [row[0] for row in rows]
+
+def _get_sensors(hub_name):
+    if not validate_expression(hub_name):
+        print("Invalid hub name")
+        return
+    
+    cursor.execute(f"SELECT * FROM {hub_name} LIMIT 0")
+    return [description[0] for description in cursor.description]
+
 def _fetch_sensor_data(hub_name, sensor_name, timestamp_start, timestamp_end):
     #print(f"Fetch {sensor_name} from {hub_name}")
     cursor.execute(f"SELECT {sensor_name} FROM {hub_name} WHERE Timestamp BETWEEN {timestamp_start} AND {timestamp_end}")

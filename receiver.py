@@ -74,7 +74,6 @@ def parse_push_data_packet(data_str):
 
 def parse_packet(packet, create_hub_callback, push_data_callback):
     packet_str = str(packet)[12:-2]
-    #print("Parse: ", packet_str)
     packet_parts = packet_str.split(">")
     
     hub_name = packet_parts[0]
@@ -104,9 +103,10 @@ def start_lora_receiver(db_name, create_hub_callback, push_data_callback):
             #print(counter, ": No packet")
             pass
         else:
-            #try:
-            parse_packet(packet, create_hub_callback, push_data_callback)
-            #except:
-            #    print("Failed to parse data: ", packet)
+            try:
+                parse_packet(packet, create_hub_callback, push_data_callback)
+                db._commit_db()
+            except:
+                print("Failed to parse data: ", packet)
 
         counter += 1
